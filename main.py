@@ -261,14 +261,19 @@ def main():
                 quit()
 
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_RIGHT] and player.x - player_vel > 0:
+
+        if keys[pygame.K_LEFT] and player.x - player_vel > 0:
             player.x -= player_vel
-        if keys[pygame.K_LEFT] and player.x + player_vel + player.get_width() < height:
+
+        if keys[pygame.K_RIGHT] and player.x + player_vel + player.get_width() < width:
             player.x += player_vel
-        if keys[pygame.K_DOWN] and player.y - player_vel > 0:
+
+        if keys[pygame.K_UP] and player.y - player_vel > 0:
             player.y -= player_vel
-        if keys[pygame.K_UP] and player.y + player_vel + player.get_height() + 15 < height:
+
+        if keys[pygame.K_DOWN] and player.y + player_vel + player.get_height() + 15 < height:
             player.y += player_vel
+
         if keys[pygame.K_SPACE]:
             player.shoot()
 
