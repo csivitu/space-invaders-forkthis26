@@ -11,6 +11,8 @@ pygame.display.set_caption("Amaze Amaze Amaze")
 player_ship = pygame.image.load(os.path.join("assets/spaceship.png"))
 blue_laser = pygame.image.load(os.path.join("assets/pixel_laser_blue.png"))
 asteroid = pygame.image.load(os.path.join("assets/asteroid .png"))
+enemy_ship = pygame.image.load(os.path.join("assets/enemy_ship.png"))
+red_laser = pygame.image.load(os.path.join("assets/pixel_laser_red.png"))
 
 rocky_trapped = pygame.image.load(os.path.join("assets/rocky_trapped.png"))
 rocky_freed = pygame.image.load(os.path.join("assets/rocky_freed.png"))
@@ -134,12 +136,24 @@ class Player(Ship):
 
 
 class Enemy(Ship):
+    COOLDOWN = 45
+
     def __init__(self, x, y, health=100):
         super().__init__(x, y, health)
-        self.ship_img
-        self.laser_img
+        self.ship_img = pygame.transform.scale(enemy_ship, (64, 64))
+        self.laser_img = pygame.transform.scale(red_laser, (8, 32))
         self.mask = pygame.mask.from_surface(self.ship_img)
         self.max_health = health
+
+    def move(self, vel):
+        self.y += vel
+
+    def shoot(self):
+        # fire from the bottom edge so the laser travels away from the enemy
+        if self.cool_down_counter == 0:
+            laser_x = self.x + self.get_width() // 2 - self.laser_img.get_width() // 2
+            self.lasers.append(Laser(laser_x, self.y + self.get_height(), self.laser_img))
+            self.cool_down_counter = 1
 
 
 
@@ -195,8 +209,11 @@ def main():
     lost_font = pygame.font.SysFont("comicsans", 60)
 
     asteroids = []
+    enemies = []
     wave_length = 5
     asteroid_vel = 1
+    enemy_vel = 1
+    enemy_laser_vel = 4
 
     player_vel = 5
     laser_vel = 5
@@ -216,6 +233,9 @@ def main():
 
         for asteroid_obj in asteroids:
             asteroid_obj.draw(game_window)
+
+        for enemy_obj in enemies:
+            enemy_obj.draw(game_window)
 
         player.draw(game_window)
 
@@ -256,6 +276,10 @@ def main():
                     asteroid_obj = Asteroid(x, y)
                 asteroids.append(asteroid_obj)
 
+            for _ in range(level):
+                enemies.append(Enemy(random.randrange(50, width - 100),
+                                     random.randrange(-1500, -100)))
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 quit()
@@ -284,6 +308,16 @@ def main():
             elif asteroid_obj.y + asteroid_obj.get_height() > height:
                 lives -= 1
                 asteroids.remove(asteroid_obj)
+
+        for enemy_obj in enemies[:]:
+            enemy_obj.move(enemy_vel)
+            enemy_obj.shoot()
+            enemy_obj.move_lasers(enemy_laser_vel, player)
+            if collide(enemy_obj, player):
+                player.health -= 10
+                enemies.remove(enemy_obj)
+            elif enemy_obj.y > height:
+                enemies.remove(enemy_obj)
 
         player.move_lasers(-laser_vel, asteroids, score)
 
