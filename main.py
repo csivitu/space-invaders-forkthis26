@@ -105,11 +105,11 @@ class Player(Ship):
                         if getattr(obj, "is_rocky", False) and not obj.freed:
                             obj.free()
                         objs.remove(obj)
-                        score += 0
+                        score += 10
                         if laser in self.lasers:
                             self.lasers.remove(laser)
-                        return
-        return
+                        return score
+        return score
 
     def draw(self, window):
         super().draw(window)
@@ -275,6 +275,8 @@ def main():
         for asteroid_obj in asteroids[:]:
             if getattr(asteroid_obj, "freed", False):
                 asteroid_obj.escape()
+                if asteroid_obj.y< -100:
+                    asteroids.remove(asteroid_obj)
                 continue
 
             asteroid_obj.move(asteroid_vel)
@@ -285,7 +287,7 @@ def main():
                 lives -= 1
                 asteroids.remove(asteroid_obj)
 
-        player.move_lasers(-laser_vel, asteroids, score)
+        score = player.move_lasers(-laser_vel, asteroids, score)
 
 
 def main_menu():
