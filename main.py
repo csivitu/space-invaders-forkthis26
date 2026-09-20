@@ -18,6 +18,9 @@ rocky_freed = pygame.image.load(os.path.join("assets/rocky_freed.png"))
 BG = pygame.transform.scale(pygame.image.load(os.path.join("assets/background.png")), (width, height))
 
 
+COLLISION_DAMAGE = 10
+
+
 class Laser:
     def __init__(self, x, y, img):
         self.x = x
@@ -62,7 +65,8 @@ class Ship:
             if laser.off_screen(height):
                 self.lasers.remove(laser)
             elif laser.collision(obj):
-                self.health -= 10
+                # the laser damages whatever it hit, not the ship that fired it
+                obj.health -= 10
                 self.lasers.remove(laser)
 
     def cooldown(self):
@@ -280,6 +284,7 @@ def main():
             asteroid_obj.move(asteroid_vel)
 
             if collide(asteroid_obj, player):
+                player.health -= COLLISION_DAMAGE
                 asteroids.remove(asteroid_obj)
             elif asteroid_obj.y + asteroid_obj.get_height() > height:
                 lives -= 1
