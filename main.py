@@ -8,7 +8,7 @@ width, height = 750, 750
 game_window = pygame.display.set_mode((width, height))
 pygame.display.set_caption("Amaze Amaze Amaze")
 
-# Safely load game assets
+
 player_ship = pygame.image.load(os.path.join("assets/spaceship.png"))
 blue_laser = pygame.image.load(os.path.join("assets/pixel_laser_blue.png"))
 asteroid = pygame.image.load(os.path.join("assets/asteroid .png"))
@@ -31,7 +31,6 @@ class Laser:
         pygame.draw.rect(window,(255,0,0),(self.x,self.y,20,40))
 
     def move(self, vel):
-        # Base class movement tracker
         self.y += vel
 
     def off_screen(self, height_boundary):
@@ -91,7 +90,7 @@ class Player(Ship):
         points_earned = 0
         
         for laser in self.lasers[:]:
-            laser.y -= vel  # Player lasers move UP smoothly
+            laser.y -= vel  
             
             if laser.y < 0:
                 if laser in self.lasers:
@@ -102,11 +101,11 @@ class Player(Ship):
                 if laser.collision(obj):
                     if getattr(obj, "is_rocky", False) and not obj.freed:
                         obj.free()
-                        points_earned += 100  # Rescue Rocky score bonus
+                        points_earned += 100  
                     else:
                         if obj in objs:
-                            objs.remove(obj)  # Eliminate enemy/asteroid
-                        points_earned += 15   # Kill score points
+                            objs.remove(obj)  
+                        points_earned += 15   
                     
                     if laser in self.lasers:
                         self.lasers.remove(laser)
@@ -115,9 +114,9 @@ class Player(Ship):
         return points_earned
 
     def shoot(self):
-             # Force calculation directly using player assets
+             
         laser_x = self.x + self.ship_img.get_width() // 2 - self.laser_img.get_width() // 2
-             # Spawn slightly above the ship so it is immediately visible
+             
         laser_y = self.y - 10 
             
         laser = Laser(laser_x, laser_y, self.laser_img)
@@ -260,7 +259,7 @@ def main():
             else:
                 continue
 
-        # Spawning mechanism
+        
         if len(asteroids) == 0:
             level += 1
             wave_length += 3
@@ -283,7 +282,7 @@ def main():
                 pygame.quit()
                 quit()
 
-        # Corrected Player Controls
+        
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT] and player.x - player_vel > 0:
             player.x -= player_vel
@@ -298,7 +297,7 @@ def main():
                 player.shoot()
                 player.cool_down_counter=20
 
-        # Update Player Lasers and dynamic score assignment
+        
         score += player.move_lasers(laser_vel, asteroids)
 
         for asteroid_obj in asteroids[:]:
@@ -311,19 +310,19 @@ def main():
 
             asteroid_obj.move(asteroid_vel)
             
-            # Enemy logic code
+            
             if isinstance(asteroid_obj, Enemy):
                 asteroid_obj.cooldown()
                 if random.randrange(0, 60) == 1:
                     asteroid_obj.shoot()
                 
                 for laser in asteroid_obj.lasers[:]:
-                    laser.y += laser_vel  # Enemy lasers travel down smoothly
+                    laser.y += laser_vel  
                     if laser.off_screen(height):
                         if laser in asteroid_obj.lasers:
                             asteroid_obj.lasers.remove(laser)
                     elif collide(laser, player):
-                        player.health -= 10  # Laser reduces health bar!
+                        player.health -= 10  
                         if laser in asteroid_obj.lasers:
                             asteroid_obj.lasers.remove(laser)
 
@@ -337,7 +336,7 @@ def main():
                 if asteroid_obj in asteroids:
                     asteroids.remove(asteroid_obj)
 
-        #player.move_lasers(laser_vel, asteroids)
+        
 
 
 def main_menu():
