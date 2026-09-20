@@ -8,6 +8,7 @@ width, height = 750, 750
 game_window = pygame.display.set_mode((width, height))
 pygame.display.set_caption("Amaze Amaze Amaze")
 
+
 player_ship = pygame.image.load(os.path.join("assets/spaceship.png"))
 blue_laser = pygame.image.load(os.path.join("assets/pixel_laser_blue.png"))
 asteroid = pygame.image.load(os.path.join("assets/asteroid .png"))
@@ -23,16 +24,17 @@ class Laser:
         self.x = x
         self.y = y
         self.img = img
-        self.mask = pygame.mask.from_surface(self.img)
+        surface=pygame.Surface((20,40))
+        self.mask = pygame.mask.from_surface(surface)
 
     def draw(self, window):
-        window.blit(self.img, (self.x, self.y))
+        pygame.draw.rect(window,(255,0,0),(self.x,self.y,20,40))
 
     def move(self, vel):
         self.y += vel
 
-    def off_screen(self, height):
-        return not (self.y <= height and self.y >= 0)
+    def off_screen(self, height_boundary):
+        return not (self.y <= height_boundary and self.y >= 0)
 
     def collision(self, obj):
         return collide(self, obj)
@@ -54,16 +56,6 @@ class Ship:
         window.blit(self.ship_img, (self.x, self.y))
         for laser in self.lasers:
             laser.draw(window)
-
-    def move_lasers(self, vel, obj):
-        self.cooldown()
-        for laser in self.lasers:
-            laser.move(vel)
-            if laser.off_screen(height):
-                self.lasers.remove(laser)
-            elif laser.collision(obj):
-                self.health -= 10
-                self.lasers.remove(laser)
 
     def cooldown(self):
         if self.cool_down_counter >= self.COOLDOWN:
@@ -93,23 +85,44 @@ class Player(Ship):
         self.mask = pygame.mask.from_surface(self.ship_img)
         self.max_health = health
 
-    def move_lasers(self, vel, objs, score):
+    def move_lasers(self, vel, objs):
         self.cooldown()
-        for laser in self.lasers:
-            laser.move(vel)
-            if laser.off_screen(height):
-                self.lasers.remove(laser)
-            else:
-                for obj in objs:
-                    if laser.collision(obj):
-                        if getattr(obj, "is_rocky", False) and not obj.freed:
-                            obj.free()
-                        objs.remove(obj)
-                        score += 0
-                        if laser in self.lasers:
-                            self.lasers.remove(laser)
-                        return
-        return
+        points_earned = 0
+        
+        for laser in self.lasers[:]:
+            laser.y -= vel  
+            
+            if laser.y < 0:
+                if laser in self.lasers:
+                    self.lasers.remove(laser)
+                continue
+                
+            for obj in objs[:]:
+                if laser.collision(obj):
+                    if getattr(obj, "is_rocky", False) and not obj.freed:
+                        obj.free()
+                        points_earned += 100  
+                    else:
+                        if obj in objs:
+                            objs.remove(obj)  
+                        points_earned += 15   
+                    
+                    if laser in self.lasers:
+                        self.lasers.remove(laser)
+                    break
+                    
+        return points_earned
+
+    def shoot(self):
+             
+        laser_x = self.x + self.ship_img.get_width() // 2 - self.laser_img.get_width() // 2
+             
+        laser_y = self.y - 10 
+            
+        laser = Laser(laser_x, laser_y, self.laser_img)
+        self.lasers.append(laser)
+            
+
 
     def draw(self, window):
         super().draw(window)
@@ -121,33 +134,36 @@ class Player(Ship):
             (255, 0, 0),
             (self.x, self.y + self.ship_img.get_height() + 10, self.ship_img.get_width(), 10),
         )
-        pygame.draw.rect(
-            window,
-            (0, 255, 0),
-            (
-                self.x,
-                self.y + self.ship_img.get_height() + 10,
-                self.ship_img.get_width() * (self.health / self.max_health),
-                10,
-            ),
-        )
+        if self.health > 0:
+            pygame.draw.rect(
+                window,
+                (0, 255, 0),
+                (
+                    self.x,
+                    self.y + self.ship_img.get_height() + 10,
+                    self.ship_img.get_width() * (self.health / self.max_health),
+                    10,
+                ),
+            )
 
 
 class Enemy(Ship):
     def __init__(self, x, y, health=100):
         super().__init__(x, y, health)
-        self.ship_img
-        self.laser_img
+        self.ship_img = pygame.transform.flip(pygame.transform.scale(player_ship, (64, 64)), False, True)
+        self.laser_img = pygame.transform.scale(blue_laser, (8, 64))
         self.mask = pygame.mask.from_surface(self.ship_img)
         self.max_health = health
 
+    def move(self, vel):
+        self.y += vel
 
-
-
-
-
-
-
+    def shoot(self):
+        if self.cool_down_counter == 0:
+            laser_x = self.x + self.get_width() // 2 - self.laser_img.get_width() // 2
+            laser = Laser(laser_x, self.y + self.get_height(), self.laser_img)
+            self.lasers.append(laser)
+            self.cool_down_counter = 1
 
 
 class Asteroid(Ship):
@@ -176,7 +192,8 @@ class RockyAsteroid(Asteroid):
         self.freed = True
 
     def escape(self):
-        pass
+        self.y -= 3
+        self.x -= 2
 
 
 def collide(obj1, obj2):
@@ -202,7 +219,6 @@ def main():
     laser_vel = 5
 
     player = Player(300, 630)
-
     clock = pygame.time.Clock()
 
     lost = False
@@ -243,49 +259,84 @@ def main():
             else:
                 continue
 
+        
         if len(asteroids) == 0:
             level += 1
-            wave_length += 5
+            wave_length += 3
             rocky_index = random.randrange(0, wave_length)
             for i in range(wave_length):
                 x = random.randrange(50, width - 100)
                 y = random.randrange(-1500, -100)
+                
                 if i == rocky_index:
                     asteroid_obj = RockyAsteroid(x, y)
+                elif i % 3 == 0:  
+                    asteroid_obj = Enemy(x, y)
                 else:
                     asteroid_obj = Asteroid(x, y)
                 asteroids.append(asteroid_obj)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                run = False
+                pygame.quit()
                 quit()
 
+        
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_RIGHT] and player.x - player_vel > 0:
+        if keys[pygame.K_LEFT] and player.x - player_vel > 0:
             player.x -= player_vel
-        if keys[pygame.K_LEFT] and player.x + player_vel + player.get_width() < height:
+        if keys[pygame.K_RIGHT] and player.x + player_vel + player.get_width() < width:
             player.x += player_vel
-        if keys[pygame.K_DOWN] and player.y - player_vel > 0:
+        if keys[pygame.K_UP] and player.y - player_vel > 0:
             player.y -= player_vel
-        if keys[pygame.K_UP] and player.y + player_vel + player.get_height() + 15 < height:
+        if keys[pygame.K_DOWN] and player.y + player_vel + player.get_height() + 15 < height:
             player.y += player_vel
         if keys[pygame.K_SPACE]:
-            player.shoot()
+            if player.cool_down_counter==0:
+                player.shoot()
+                player.cool_down_counter=20
+
+        
+        score += player.move_lasers(laser_vel, asteroids)
 
         for asteroid_obj in asteroids[:]:
             if getattr(asteroid_obj, "freed", False):
                 asteroid_obj.escape()
+                if asteroid_obj.y < -100 or asteroid_obj.x < -100:
+                    if asteroid_obj in asteroids:
+                        asteroids.remove(asteroid_obj)
                 continue
 
             asteroid_obj.move(asteroid_vel)
+            
+            
+            if isinstance(asteroid_obj, Enemy):
+                asteroid_obj.cooldown()
+                if random.randrange(0, 60) == 1:
+                    asteroid_obj.shoot()
+                
+                for laser in asteroid_obj.lasers[:]:
+                    laser.y += laser_vel  
+                    if laser.off_screen(height):
+                        if laser in asteroid_obj.lasers:
+                            asteroid_obj.lasers.remove(laser)
+                    elif collide(laser, player):
+                        player.health -= 10  
+                        if laser in asteroid_obj.lasers:
+                            asteroid_obj.lasers.remove(laser)
 
             if collide(asteroid_obj, player):
-                asteroids.remove(asteroid_obj)
-            elif asteroid_obj.y + asteroid_obj.get_height() > height:
-                lives -= 1
-                asteroids.remove(asteroid_obj)
+                player.health-=20
+                if asteroid_obj in asteroids:
+                    asteroids.remove(asteroid_obj)
+            elif asteroid_obj.y > height:
+                if not isinstance(asteroid_obj,Enemy):
+                    lives -= 1
+                if asteroid_obj in asteroids:
+                    asteroids.remove(asteroid_obj)
 
-        player.move_lasers(-laser_vel, asteroids, score)
+        
 
 
 def main_menu():
