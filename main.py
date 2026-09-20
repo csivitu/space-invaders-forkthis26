@@ -104,12 +104,14 @@ class Player(Ship):
                     if laser.collision(obj):
                         if getattr(obj, "is_rocky", False) and not obj.freed:
                             obj.free()
+                            score += 50
+                        else:
+                            score += 10
                         objs.remove(obj)
-                        score += 0
                         if laser in self.lasers:
                             self.lasers.remove(laser)
-                        return
-        return
+                        return score
+        return score
 
     def draw(self, window):
         super().draw(window)
@@ -261,16 +263,12 @@ def main():
                 quit()
 
         keys = pygame.key.get_pressed()
-
         if keys[pygame.K_LEFT] and player.x - player_vel > 0:
             player.x -= player_vel
-
-        if keys[pygame.K_RIGHT] and player.x + player_vel + player.get_width() < width:
+        if keys[pygame.K_RIGHT] and player.x + player_vel + player.get_width() < height:
             player.x += player_vel
-
         if keys[pygame.K_UP] and player.y - player_vel > 0:
             player.y -= player_vel
-
         if keys[pygame.K_DOWN] and player.y + player_vel + player.get_height() + 15 < height:
             player.y += player_vel
 
@@ -290,7 +288,7 @@ def main():
                 lives -= 1
                 asteroids.remove(asteroid_obj)
 
-        player.move_lasers(-laser_vel, asteroids, score)
+        score = player.move_lasers(-laser_vel, asteroids, score)
 
 
 def main_menu():
