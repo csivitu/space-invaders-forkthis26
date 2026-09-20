@@ -101,10 +101,14 @@ class Player(Ship):
                 self.lasers.remove(laser)
             else:
                 for obj in objs:
+                    if getattr(obj, "freed", False):
+                        # already free, let him make his escape
+                        continue
                     if laser.collision(obj):
                         if getattr(obj, "is_rocky", False) and not obj.freed:
                             obj.free()
-                        objs.remove(obj)
+                        else:
+                            objs.remove(obj)
                         score += 0
                         if laser in self.lasers:
                             self.lasers.remove(laser)
@@ -174,9 +178,13 @@ class RockyAsteroid(Asteroid):
         self.ship_img = self.freed_img
         self.mask = pygame.mask.from_surface(self.ship_img)
         self.freed = True
+        # head for whichever side edge is nearer, drifting up and out of view
+        self.escape_vel_x = -6 if self.x < width / 2 else 6
+        self.escape_vel_y = -3
 
     def escape(self):
-        pass
+        self.x += self.escape_vel_x
+        self.y += self.escape_vel_y
 
 
 def collide(obj1, obj2):
@@ -275,6 +283,10 @@ def main():
         for asteroid_obj in asteroids[:]:
             if getattr(asteroid_obj, "freed", False):
                 asteroid_obj.escape()
+                if (asteroid_obj.x + asteroid_obj.get_width() < 0
+                        or asteroid_obj.x > width
+                        or asteroid_obj.y + asteroid_obj.get_height() < 0):
+                    asteroids.remove(asteroid_obj)
                 continue
 
             asteroid_obj.move(asteroid_vel)
