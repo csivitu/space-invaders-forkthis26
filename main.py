@@ -107,7 +107,7 @@ class Player(Ship):
                             score += 50
                         else:
                             score += 10
-                        objs.remove(obj)
+                            objs.remove(obj)
                         if laser in self.lasers:
                             self.lasers.remove(laser)
                         return score
@@ -176,9 +176,10 @@ class RockyAsteroid(Asteroid):
         self.ship_img = self.freed_img
         self.mask = pygame.mask.from_surface(self.ship_img)
         self.freed = True
+        self.escape_direction = random.choice([-8, 8])
 
     def escape(self):
-        pass
+        self.x += self.escape_direction
 
 
 def collide(obj1, obj2):
@@ -278,6 +279,9 @@ def main():
         for asteroid_obj in asteroids[:]:
             if getattr(asteroid_obj, "freed", False):
                 asteroid_obj.escape()
+                # Remove Rocky once he's off screen
+                if asteroid_obj.x < -100 or asteroid_obj.x > width + 100:
+                    asteroids.remove(asteroid_obj)
                 continue
 
             asteroid_obj.move(asteroid_vel)
