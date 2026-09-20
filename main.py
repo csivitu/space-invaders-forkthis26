@@ -18,6 +18,9 @@ rocky_freed = pygame.image.load(os.path.join("assets/rocky_freed.png"))
 BG = pygame.transform.scale(pygame.image.load(os.path.join("assets/background.png")), (width, height))
 
 
+ESCAPE_SPEED = 4
+
+
 class Laser:
     def __init__(self, x, y, img):
         self.x = x
@@ -103,8 +106,10 @@ class Player(Ship):
                 for obj in objs:
                     if laser.collision(obj):
                         if getattr(obj, "is_rocky", False) and not obj.freed:
+                            # free rocky instead of destroying him; he flies off on his own
                             obj.free()
-                        objs.remove(obj)
+                        else:
+                            objs.remove(obj)
                         score += 0
                         if laser in self.lasers:
                             self.lasers.remove(laser)
@@ -169,14 +174,22 @@ class RockyAsteroid(Asteroid):
         self.mask = pygame.mask.from_surface(self.ship_img)
         self.is_rocky = True
         self.freed = False
+        self.escape_vel_x = 0
 
     def free(self):
         self.ship_img = self.freed_img
         self.mask = pygame.mask.from_surface(self.ship_img)
         self.freed = True
+        # head for whichever side edge is nearer, so the escape reads clearly
+        self.escape_vel_x = -ESCAPE_SPEED if self.x < width / 2 else ESCAPE_SPEED
 
     def escape(self):
-        pass
+        self.x += self.escape_vel_x
+        self.y -= ESCAPE_SPEED // 2
+
+    def off_screen(self):
+        return (self.x + self.get_width() < 0 or self.x > width
+                or self.y + self.get_height() < 0)
 
 
 def collide(obj1, obj2):
@@ -275,6 +288,9 @@ def main():
         for asteroid_obj in asteroids[:]:
             if getattr(asteroid_obj, "freed", False):
                 asteroid_obj.escape()
+                # once he is clear of the screen the wave can finish
+                if asteroid_obj.off_screen():
+                    asteroids.remove(asteroid_obj)
                 continue
 
             asteroid_obj.move(asteroid_vel)
