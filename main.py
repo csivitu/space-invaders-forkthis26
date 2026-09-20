@@ -169,6 +169,7 @@ class RockyAsteroid(Asteroid):
         self.mask = pygame.mask.from_surface(self.ship_img)
         self.is_rocky = True
         self.freed = False
+        self.escape_vel = None      
 
     def free(self):
         self.ship_img = self.freed_img
@@ -176,7 +177,9 @@ class RockyAsteroid(Asteroid):
         self.freed = True
 
     def escape(self):
-        pass
+        if self.escape_vel is None:
+            self.escape_vel = -5 if self.x < width / 2 else 5
+        self.x += self.escape_vel
 
 
 def collide(obj1, obj2):
@@ -275,6 +278,8 @@ def main():
         for asteroid_obj in asteroids[:]:
             if getattr(asteroid_obj, "freed", False):
                 asteroid_obj.escape()
+                if asteroid_obj.x < -100 or asteroid_obj.x > width + 100:
+                    asteroids.remove(asteroid_obj)
                 continue
 
             asteroid_obj.move(asteroid_vel)
