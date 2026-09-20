@@ -283,6 +283,7 @@ def main():
             asteroid_obj.move(asteroid_vel)
 
             if collide(asteroid_obj, player):
+                player.health -= 10
                 asteroids.remove(asteroid_obj)
             elif asteroid_obj.y + asteroid_obj.get_height() > height:
                 lives -= 1
