@@ -275,6 +275,8 @@ def main():
         for asteroid_obj in asteroids[:]:
             if getattr(asteroid_obj, "freed", False):
                 asteroid_obj.escape()
+                if asteroid_obj.y< -100:
+                    asteroids.remove(asteroid_obj)
                 continue
 
             asteroid_obj.move(asteroid_vel)
@@ -285,7 +287,7 @@ def main():
                 lives -= 1
                 asteroids.remove(asteroid_obj)
 
-        player.move_lasers(-laser_vel, asteroids, score)
+        score = player.move_lasers(-laser_vel, asteroids, score)
 
 
 def main_menu():
