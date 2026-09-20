@@ -105,7 +105,7 @@ class Player(Ship):
                         if getattr(obj, "is_rocky", False) and not obj.freed:
                             obj.free()
                         objs.remove(obj)
-                        score += 0
+                        score += 1
                         if laser in self.lasers:
                             self.lasers.remove(laser)
                         return
@@ -176,7 +176,7 @@ class RockyAsteroid(Asteroid):
         self.freed = True
 
     def escape(self):
-        pass
+        self.y -= 5
 
 
 def collide(obj1, obj2):
