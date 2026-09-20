@@ -271,6 +271,7 @@ def main():
             player.y -= player_vel
         if keys[pygame.K_DOWN] and player.y + player_vel + player.get_height() + 15 < height:
             player.y += player_vel
+
         if keys[pygame.K_SPACE]:
             player.shoot()
 
