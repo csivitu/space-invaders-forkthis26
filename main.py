@@ -104,7 +104,8 @@ class Player(Ship):
                     if laser.collision(obj):
                         if getattr(obj, "is_rocky", False) and not obj.freed:
                             obj.free()
-                        objs.remove(obj)
+                        else:
+                            objs.remove(obj)
                         score += 0
                         if laser in self.lasers:
                             self.lasers.remove(laser)
@@ -176,7 +177,7 @@ class RockyAsteroid(Asteroid):
         self.freed = True
 
     def escape(self):
-        pass
+        self.x += 5
 
 
 def collide(obj1, obj2):
@@ -275,6 +276,8 @@ def main():
         for asteroid_obj in asteroids[:]:
             if getattr(asteroid_obj, "freed", False):
                 asteroid_obj.escape()
+                if asteroid_obj.x > width:
+                    asteroids.remove(asteroid_obj)
                 continue
 
             asteroid_obj.move(asteroid_vel)
