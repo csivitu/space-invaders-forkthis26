@@ -14,6 +14,8 @@ asteroid = pygame.image.load(os.path.join("assets/asteroid .png"))
 
 rocky_trapped = pygame.image.load(os.path.join("assets/rocky_trapped.png"))
 rocky_freed = pygame.image.load(os.path.join("assets/rocky_freed.png"))
+red_laser = pygame.image.load(os.path.join("assets/pixel_laser_red.png"))
+enemy_ship_img = pygame.image.load(os.path.join("assets/enemy_ship.png"))
 
 BG = pygame.transform.scale(pygame.image.load(os.path.join("assets/background.png")), (width, height))
 
@@ -136,10 +138,13 @@ class Player(Ship):
 class Enemy(Ship):
     def __init__(self, x, y, health=100):
         super().__init__(x, y, health)
-        self.ship_img
-        self.laser_img
+        self.ship_img = enemy_ship_img
+        self.laser_img = pygame.transform.scale(red_laser, (8, 128))
         self.mask = pygame.mask.from_surface(self.ship_img)
         self.max_health = health
+
+    def move(self, vel):
+        self.y += vel
 
 
 
@@ -195,6 +200,7 @@ def main():
     lost_font = pygame.font.SysFont("comicsans", 60)
 
     asteroids = []
+    enemies=[]
     wave_length = 5
     asteroid_vel = 1
 
@@ -216,6 +222,9 @@ def main():
 
         for asteroid_obj in asteroids:
             asteroid_obj.draw(game_window)
+        for enemy in enemies:
+            enemy.draw(game_window)
+
 
         player.draw(game_window)
 
@@ -255,6 +264,10 @@ def main():
                 else:
                     asteroid_obj = Asteroid(x, y)
                 asteroids.append(asteroid_obj)
+            if level % 2 == 0:
+                ex = random.randrange(50, width - 100)
+                ey = random.randrange(-800, -100)
+                enemies.append(Enemy(ex, ey))
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -284,6 +297,18 @@ def main():
             elif asteroid_obj.y + asteroid_obj.get_height() > height:
                 lives -= 1
                 asteroids.remove(asteroid_obj)
+        for enemy in enemies[:]:
+            enemy.move(asteroid_vel)
+            if random.randrange(0, 2 * FPS) == 1:
+                enemy.shoot()
+            enemy.move_lasers(laser_vel, player)
+            if collide(enemy, player):
+                player.health -= 10
+                enemies.remove(enemy)
+            elif enemy.y + enemy.get_height() > height:
+                enemies.remove(enemy)
+
+        
 
         player.move_lasers(-laser_vel, asteroids, score)
 
