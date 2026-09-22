@@ -14,6 +14,8 @@ asteroid = pygame.image.load(os.path.join("assets/asteroid .png"))
 
 rocky_trapped = pygame.image.load(os.path.join("assets/rocky_trapped.png"))
 rocky_freed = pygame.image.load(os.path.join("assets/rocky_freed.png"))
+enemy_ship = pygame.image.load(os.path.join("assets/enemy_ship.png"))
+red_laser = pygame.image.load(os.path.join("assets/pixel_laser_red.png"))
 
 BG = pygame.transform.scale(pygame.image.load(os.path.join("assets/background.png")), (width, height))
 
@@ -138,10 +140,23 @@ class Player(Ship):
 class Enemy(Ship):
     def __init__(self, x, y, health=100):
         super().__init__(x, y, health)
-        self.ship_img
-        self.laser_img
+        self.ship_img = enemy_ship
+        self.laser_img = pygame.transform.scale(red_laser, (8, 128))
         self.mask = pygame.mask.from_surface(self.ship_img)
         self.max_health = health
+
+    def move(self, vel):
+        self.y += vel
+
+    def move_lasers(self, vel, player):
+        self.cooldown()
+        for laser in self.lasers[:]:
+            laser.move(vel)
+            if laser.off_screen(height):
+                self.lasers.remove(laser)
+            elif laser.collision(player):
+                player.health -= 10
+                self.lasers.remove(laser)
 
 
 
@@ -258,6 +273,7 @@ def main():
                 else:
                     asteroid_obj = Asteroid(x, y)
                 asteroids.append(asteroid_obj)
+            asteroids.append(Enemy(random.randrange(50, width - 100), random.randrange(-1500, -100)))
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -284,6 +300,9 @@ def main():
                     asteroids.remove(asteroid_obj)
                 continue
 
+            if isinstance(asteroid_obj, Enemy):
+                asteroid_obj.shoot()
+                asteroid_obj.move_lasers(laser_vel, player)
             asteroid_obj.move(asteroid_vel)
 
             if collide(asteroid_obj, player):
